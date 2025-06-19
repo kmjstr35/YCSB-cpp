@@ -26,6 +26,7 @@ class Measurements {
   virtual void Report(Operation op, uint64_t latency) = 0;
   virtual std::string GetStatusMsg() = 0;
   virtual void Reset() = 0;
+  virtual ~Measurements() = default;
 };
 
 class BasicMeasurements : public Measurements {
@@ -48,6 +49,10 @@ class HdrHistogramMeasurements : public Measurements {
   void Report(Operation op, uint64_t latency) override;
   std::string GetStatusMsg() override;
   void Reset() override;
+  ~HdrHistogramMeasurements() override {
+    for (auto i = 0u; i < MAXOPTYPE; ++i)
+      hdr_close(histogram_[i]);
+  }
  private:
   hdr_histogram *histogram_[MAXOPTYPE];
 };

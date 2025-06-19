@@ -226,6 +226,8 @@ int main(const int argc, const char *argv[]) {
   for (int i = 0; i < num_threads; i++) {
     delete dbs[i];
   }
+
+  delete measurements;
 }
 
 void ParseCommandLine(int argc, const char *argv[], ycsbc::utils::Properties &props) {
