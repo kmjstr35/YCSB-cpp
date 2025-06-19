@@ -51,6 +51,7 @@ class RocksdbDB : public DB {
   }
 
  private:
+  std::shared_ptr<rocksdb::Env> env_guard{nullptr};
   enum RocksFormat {
     kSingleRow,
   };
@@ -92,8 +93,8 @@ class RocksdbDB : public DB {
 
   int fieldcount_;
 
-  static std::vector<rocksdb::ColumnFamilyHandle *> cf_handles_;
-  static rocksdb::DB *db_;
+  std::vector<rocksdb::ColumnFamilyHandle *> cf_handles_;
+  rocksdb::DB *db_{nullptr};
   static int ref_cnt_;
   static std::mutex mu_;
 };

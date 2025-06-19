@@ -12,6 +12,7 @@
 #include "core/db_factory.h"
 #include "utils/utils.h"
 
+#include <memory>
 #include <rocksdb/cache.h>
 #include <rocksdb/filter_policy.h>
 #include <rocksdb/merge_operator.h>
@@ -104,7 +105,6 @@ namespace {
   const std::string PROP_FS_URI = "rocksdb.fs_uri";
   const std::string PROP_FS_URI_DEFAULT = "";
 
-  static std::shared_ptr<rocksdb::Env> env_guard;
   static std::shared_ptr<rocksdb::Cache> block_cache;
 #if ROCKSDB_MAJOR < 8
   static std::shared_ptr<rocksdb::Cache> block_cache_compressed;
@@ -113,8 +113,6 @@ namespace {
 
 namespace ycsbc {
 
-std::vector<rocksdb::ColumnFamilyHandle *> RocksdbDB::cf_handles_;
-rocksdb::DB *RocksdbDB::db_ = nullptr;
 int RocksdbDB::ref_cnt_ = 0;
 std::mutex RocksdbDB::mu_;
 
@@ -243,19 +241,23 @@ void RocksdbDB::GetOptions(const utils::Properties &props, rocksdb::Options *opt
     if (!s.ok()) {
       throw utils::Exception(std::string("RocksDB CreateFromUri: ") + s.ToString());
     }
-    opt->env = env;
   }
 
   const std::string options_file = props.GetProperty(PROP_OPTIONS_FILE, PROP_OPTIONS_FILE_DEFAULT);
   if (options_file != "") {
+    rocksdb::DBOptions db_opts;
+
     rocksdb::ConfigOptions config_options;
     config_options.ignore_unknown_options = false;
     config_options.input_strings_escaped = true;
-    config_options.env = env;
-    rocksdb::Status s = rocksdb::LoadOptionsFromFile(config_options, options_file, opt, cf_descs);
+    rocksdb::Status s = rocksdb::LoadOptionsFromFile(
+						     config_options, options_file, &db_opts, cf_descs);
+
+    db_opts.env = env;
     if (!s.ok()) {
       throw utils::Exception(std::string("RocksDB LoadOptionsFromFile: ") + s.ToString());
     }
+    *opt = rocksdb::Options(db_opts, (*cf_descs)[0].options);
   } else {
     const std::string compression_type = props.GetProperty(PROP_COMPRESSION,
                                                            PROP_COMPRESSION_DEFAULT);
