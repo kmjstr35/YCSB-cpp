@@ -387,7 +387,7 @@ void RocksdbDB::DeserializeRowFilter(std::vector<Field> &values, const char *p, 
     p += sizeof(uint32_t);
     std::string field(p, static_cast<const size_t>(len));
     p += len;
-    len = *reinterpret_cast<const uint32_t *>(p);
+    memcpy(&len, p, sizeof(uint32_t));
     p += sizeof(uint32_t);
     std::string value(p, static_cast<const size_t>(len));
     p += len;
@@ -409,11 +409,13 @@ void RocksdbDB::DeserializeRowFilter(std::vector<Field> &values, const std::stri
 void RocksdbDB::DeserializeRow(std::vector<Field> &values, const char *p, const char *lim) {
   while (p != lim) {
     assert(p < lim);
-    uint32_t len = *reinterpret_cast<const uint32_t *>(p);
+    uint32_t len;
+    memcpy(&len, p, sizeof(uint32_t));
     p += sizeof(uint32_t);
     std::string field(p, static_cast<const size_t>(len));
     p += len;
-    len = *reinterpret_cast<const uint32_t *>(p);
+    memcpy(&len, p, sizeof(uint32_t));
+    
     p += sizeof(uint32_t);
     std::string value(p, static_cast<const size_t>(len));
     p += len;
